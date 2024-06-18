@@ -7,10 +7,13 @@ const app = express();
 
 dotenv.config({ path: "./config/config.env" });
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3000;
+
 
 app.use(express.json());
 app.use("/api", trailerRouter);
+
+// global Error Handler to all requests
 app.use(globalErrorHandler);
 
 const server = app.listen(PORT, () => {
