@@ -1,57 +1,57 @@
 const axios = require("axios");
 
-async function getTrailerUrl(imdbId) {
-  if (!imdbId) {
-    throw new Error("IMDb ID is required");
+const TMDB_API_URL = "https://api.themoviedb.org/3";
+
+async function getTrailerUrl(movieId) {
+  if (!movieId) {
+    throw new Error("Movie ID is required");
   }
-  const options = {
-    method: "GET",
-    url: `https://api.themoviedb.org/3/find/${imdbId}?external_source=imdb_id`,
-    headers: {
-      accept: "application/json",
-      Authorization: `Bearer ${process.env.TMDB_API_TOKEN}`,
-    },
-  };
+
   try {
-    const response = await axios.request(options).then(function (response) {
-      return response;
-    });
+    // Buscar trailers do filme
+    const trailersResponse = await axios.get(
+      `${TMDB_API_URL}/movie/${movieId}/videos?language=en-US`,
+      {
+        headers: {
+          accept: "application/json",
+          Authorization: `Bearer ${process.env.TMDB_API_TOKEN}`,
+        },
+      }
+    );
 
-    const movie = response.data.movie_results[0];
-    if (!movie) {
-      throw new Error(`No movie found with IMDb ID ${imdbId}`);
-    }
-
-    const movieId = movie.id;
-    const movieOptions = {
-      method: "GET",
-      url: `https://api.themoviedb.org/3/movie/${movieId}/videos?language=en-US`,
-      headers: {
-        accept: "application/json",
-        Authorization: `Bearer ${process.env.TMDB_API_TOKEN}`,
-      },
-    };
-
-    const trailersResponse = await axios
-      .request(movieOptions)
-      .then(function (response) {
-        return response;
-      });
-
-    const trailers = trailersResponse.data.results;
-    const trailer = trailers.find(
+    const trailer = trailersResponse.data.results.find(
       (video) => video.type === "Trailer" && video.site === "YouTube"
     );
 
-    if (!trailer) {
-      throw new Error(`No trailer found for movie with IMDb ID ${imdbId}`);
-    }
-
-    return `https://www.youtube.com/watch?v=${trailer.key}`;
+    return trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : null;
   } catch (error) {
     console.error(`Error fetching trailer URL: ${error.message}`);
     return null;
   }
 }
 
-module.exports = { getTrailerUrl };
+async function getMovieIdByTitle(movieTitle) {
+  console.log(`Searching for movie with title: ${movieTitle}`);
+  try {
+    const searchResponse = await axios.get(
+      `${TMDB_API_URL}/search/movie?query=${encodeURIComponent(movieTitle)}`,
+      {
+        headers: {
+          accept: "application/json",
+          Authorization: `Bearer ${process.env.TMDB_API_TOKEN}`,
+        },
+      }
+    );
+
+    return searchResponse.data.results.map((movie) => ({
+      title: movie.title,
+      release_date: movie.release_date || "Unknown",
+      id: movie.id, // Agora retorna o ID do TMDB
+    }));
+  } catch (error) {
+    console.error(`Error fetching movie ID: ${error.message}`);
+    return [];
+  }
+}
+
+module.exports = { getTrailerUrl, getMovieIdByTitle };
