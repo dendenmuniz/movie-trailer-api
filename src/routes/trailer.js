@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { query, validationResult } = require("express-validator");
 const { getTrailerUrl } = require("../services/tmdb");
-const { getMovieIdByTitle } = require("../services/tmdb");
+const { getMovieIdByTitle, getMovieIdByImdb } = require("../services/tmdb");
 const ErrorHandler = require("../utils/errorHandler");
 
 router.get(
@@ -23,6 +23,10 @@ router.get(
       .escape()
       .isLength({ min: 1 })
       .withMessage("Movie title must be a non-empty string"),
+
+      query("movie_id").optional().isNumeric()
+      .withMessage("Movie id must be numeric"),
+
   ],
   async (req, res, next) => {
     const errors = validationResult(req);
@@ -31,18 +35,18 @@ router.get(
     }
 
     try {
-      let { imdb_id, title } = req.query;
+      let { imdb_id, title, movie_id } = req.query;
 
-      if (!imdb_id && !title) {
+      if (!imdb_id && !title && !movie_id) {
         throw new ErrorHandler(
-          "You must provide either an IMDb ID or a movie title",
+          "You must provide either an IMDb ID, a Movie ID, or a movie title",
           400
         );
       }
 
       // Se o usuário passou apenas o título, busca o ID do TMDB
       if (!imdb_id && title) {
-        const movieResults = await getMovieIdByTitle(title);
+        const movieResults = await getMovieIdByTitle(encodeURIComponent(title));
 
         if (!movieResults.length) {
           throw new ErrorHandler(
@@ -65,10 +69,17 @@ router.get(
         }
 
         // Usa o ID do TMDB do primeiro resultado encontrado
-        imdb_id = movieResults[0].id;
+        movie_id = movieResults[0].id;
       }
 
-      const trailerUrl = await getTrailerUrl(imdb_id);
+      if (imdb_id && !movie_id) {
+        movie_id = await getMovieIdByImdb(imdb_id);
+        if (!movie_id) {
+          throw new ErrorHandler("Could not find a Movie ID for this IMDb ID", 404);
+        }
+      }
+
+      const trailerUrl = await getTrailerUrl(movie_id);
       if (!trailerUrl) {
         throw new ErrorHandler("No trailer found for the given movie", 404);
       }

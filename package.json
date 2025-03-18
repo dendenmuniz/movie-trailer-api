@@ -4,7 +4,7 @@
   "description": "a REST API for providing clients with trailer URLs",
   "main": "src/app.js",
   "scripts": {
-    "start": "node app.js",
+    "start": "node src/app.js",
     "dev": "nodemon app",
     "prod": "SET NODE_ENV=production & nodemon app.js",
     "test": "npx jest"
@@ -19,6 +19,7 @@
     "express-rate-limit": "^7.5.0",
     "express-validator": "^7.2.1",
     "helmet": "^8.0.0",
+    "ioredis": "^5.6.0",
     "morgan": "^1.10.0"
   },
   "devDependencies": {
