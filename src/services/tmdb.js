@@ -1,17 +1,17 @@
-const axios = require("axios");
-const redis = require("../utils/redisClient");
+const axios = require('axios');
+const redis = require('../utils/redisClient');
 
-const TMDB_API_URL = "https://api.themoviedb.org/3";
+const TMDB_API_URL = 'https://api.themoviedb.org/3';
 
 async function getTrailerUrl(movieId) {
   if (!movieId) {
-    throw new Error("Movie ID is required");
+    throw new Error('Movie ID is required');
   }
 
   // Verify if the trailer URL is cached
   const cachedTrailer = await redis.get(`trailer:${movieId}`);
   if (cachedTrailer) {
-    console.log("Cache hit! Returning from Redis.");
+    console.log('Cache hit! Returning from Redis.');
     return cachedTrailer;
   }
 
@@ -21,14 +21,14 @@ async function getTrailerUrl(movieId) {
       `${TMDB_API_URL}/movie/${movieId}/videos?language=en-US`,
       {
         headers: {
-          accept: "application/json",
+          accept: 'application/json',
           Authorization: `Bearer ${process.env.TMDB_API_TOKEN}`,
         },
       }
     );
 
     const trailer = trailersResponse.data.results.find(
-      (video) => video.type === "Trailer" && video.site === "YouTube"
+      (video) => video.type === 'Trailer' && video.site === 'YouTube'
     );
 
     return trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : null;
@@ -39,13 +39,12 @@ async function getTrailerUrl(movieId) {
 }
 
 async function getMovieIdByTitle(movieTitle) {
-
   try {
     const searchResponse = await axios.get(
       `${TMDB_API_URL}/search/movie?query=${encodeURIComponent(movieTitle)}`,
       {
         headers: {
-          accept: "application/json",
+          accept: 'application/json',
           Authorization: `Bearer ${process.env.TMDB_API_TOKEN}`,
         },
       }
@@ -53,7 +52,7 @@ async function getMovieIdByTitle(movieTitle) {
 
     return searchResponse.data.results.map((movie) => ({
       title: movie.title,
-      release_date: movie.release_date || "Unknown",
+      release_date: movie.release_date || 'Unknown',
       id: movie.id, // Add the movie ID to the response
     }));
   } catch (error) {
@@ -64,16 +63,16 @@ async function getMovieIdByTitle(movieTitle) {
 
 async function getMovieIdByImdb(imdbId) {
   if (!imdbId) {
-    throw new Error("IMDb ID is required");
+    throw new Error('IMDb ID is required');
   }
 
   try {
     const axiosConfig = {
-      method: "GET",
+      method: 'GET',
       url: `https://api.themoviedb.org/3/find/${imdbId}`,
-      params: { external_source: "imdb_id" },
+      params: { external_source: 'imdb_id' },
       headers: {
-        Accept: "application/json",
+        Accept: 'application/json',
         Authorization: `Bearer ${process.env.TMDB_API_TOKEN}`,
       },
     };
@@ -88,10 +87,7 @@ async function getMovieIdByImdb(imdbId) {
 
     return movieResults[0].id;
   } catch (error) {
-    console.error(
-      `Error fetching Movie ID for IMDb ID ${imdbId}:`,
-      error.message
-    );
+    console.error(`Error fetching Movie ID for IMDb ID ${imdbId}:`, error.message);
     return null;
   }
 }
