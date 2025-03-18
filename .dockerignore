@@ -1,0 +1,21 @@
+# Ignorar node_modules para evitar problemas de permissão e tamanho
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Ignorar arquivos de configuração locais
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Ignorar logs
+logs
+*.log
+debug.log
+
+# Ignorar arquivos do sistema operacional e do editor
+.DS_Store
+.vscode/
+.idea/
